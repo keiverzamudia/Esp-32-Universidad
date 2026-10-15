@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/__pio_env",
+		"source" : "C:/Users/keiber.zamudia/.platformio/packages/framework-espidf@3.50500.0/components/__pio_env"
+	}
+}

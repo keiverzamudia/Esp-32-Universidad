@@ -1,0 +1,140 @@
+﻿{
+    "schema":  1,
+    "project":  "TRACE-X",
+    "generated":  "2026-10-15T08:51:31-04:00",
+    "note":  "Evidencias preprocesadas en el equipo de desarrollo. El ESP32 las sirve tal cual; no genera trazas en vivo.",
+    "total_bytes":  232920,
+    "items":  [
+                  {
+                      "id":  "ev01",
+                      "name":  "Login aceptado con credenciales válidas",
+                      "status":  "PASS",
+                      "authentic":  false,
+                      "source":  "IlustraciÃ³n generada por tools/prepare_evidence.ps1",
+                      "note":  "DEMOSTRACIÃ“N EDUCATIVA: imagen ilustrativa, no corresponde a una ejecuciÃ³n real.",
+                      "explanation":  "El test automatizado valida que un usuario con credenciales correctas accede al panel. Playwright registra la navegación, el envío del formulario y la aserción de bienvenida: evidencia de que la ruta feliz funciona.",
+                      "expected":  "Tras enviar email y password válidos, el usuario ve «Bienvenida, ana@demo.test» y la URL cambia a /panel.",
+                      "observed":  "Bienvenida visible en 412 ms. URL /panel. Aserción superada.",
+                      "steps":  [
+                                    "page.goto(\u0027https://app.demo.test/login\u0027)",
+                                    "page.fill(\u0027#email\u0027, \u0027ana@demo.test\u0027)",
+                                    "page.fill(\u0027#password\u0027, \u0027••••••••\u0027)",
+                                    "page.click(\u0027#btn-entrar\u0027)",
+                                    "await expect(page.locator(\u0027.welcome\u0027)).toHaveText(\u0027Bienvenida, ana@demo.test\u0027)",
+                                    "await expect(page).toHaveURL(/\\/panel/)"
+                                ],
+                      "related":  [
+                                      "ev02"
+                                  ]
+                  },
+                  {
+                      "id":  "ev02",
+                      "name":  "Timeout esperando #btn-pagar (elemento inexistente)",
+                      "status":  "FAIL",
+                      "authentic":  false,
+                      "source":  "IlustraciÃ³n generada por tools/prepare_evidence.ps1",
+                      "note":  "DEMOSTRACIÃ“N EDUCATIVA: imagen ilustrativa, no corresponde a una ejecuciÃ³n real.",
+                      "explanation":  "El selector apunta a un botón que la aplicación ya no renderiza en esa vista. Playwright congela el contexto, guarda screenshot y traza: el fallo real es un cambio de UI no reflejado en el test.",
+                      "expected":  "El botón #btn-pagar aparece en el carrito y al hacer clic inicia el checkout.",
+                      "observed":  "Timeout 30000 ms excedido esperando locator(\u0027#btn-pagar\u0027) visible. El DOM muestra #btn-finalizar en su lugar.",
+                      "steps":  [
+                                    "page.goto(\u0027https://app.demo.test/carrito\u0027)",
+                                    "await expect(page.locator(\u0027.item\u0027)).toHaveCount(2)",
+                                    "page.click(\u0027#btn-pagar\u0027)",
+                                    "Error: locator.click: Timeout 30000 ms exceeded",
+                                    "Captura + trace.zip guardados en test-results/"
+                                ],
+                      "related":  [
+                                      "ev01",
+                                      "ev05"
+                                  ]
+                  },
+                  {
+                      "id":  "ev03",
+                      "name":  "Formulario de contacto no valida email",
+                      "status":  "FAIL",
+                      "authentic":  false,
+                      "source":  "IlustraciÃ³n generada por tools/prepare_evidence.ps1",
+                      "note":  "DEMOSTRACIÃ“N EDUCATIVA: imagen ilustrativa, no corresponde a una ejecuciÃ³n real.",
+                      "explanation":  "Discrepancia entre la regla de negocio documentada y el comportamiento real. La evidencia (screenshot + logs de red) demuestra que el submit ocurre sin validación.",
+                      "expected":  "Un email inválido («ana@@demo») muestra el mensaje «Introduce un email válido» y no envía.",
+                      "observed":  "El formulario acepta «ana@@demo», envía con 200 y no muestra ningún error. La validación del cliente desapareció en la v2.3.",
+                      "steps":  [
+                                    "page.goto(\u0027https://app.demo.test/contacto\u0027)",
+                                    "page.fill(\u0027#email\u0027, \u0027ana@@demo\u0027)",
+                                    "page.click(\u0027#btn-enviar\u0027)",
+                                    "await expect(page.locator(\u0027.error\u0027)).toBeVisible()",
+                                    "Error: expect(locator).toBeVisible() — elemento .error no encontrado",
+                                    "POST /api/contact respondió 200 (no debería enviarse)"
+                                ],
+                      "related":  [
+                                      "ev04"
+                                  ]
+                  },
+                  {
+                      "id":  "ev04",
+                      "name":  "Carrito: total esperado €49.90, observado €54.90",
+                      "status":  "FAIL",
+                      "authentic":  false,
+                      "source":  "IlustraciÃ³n generada por tools/prepare_evidence.ps1",
+                      "note":  "DEMOSTRACIÃ“N EDUCATIVA: imagen ilustrativa, no corresponde a una ejecuciÃ³n real.",
+                      "explanation":  "Fallo de aserción numérico. La traza de red incluida en la evidencia permite ver la respuesta del carrito y rastrear el bug hasta calculateTotal().",
+                      "expected":  "Con 2 artículos (€24.95 c/u) el total muestra €49.90 antes de impuestos.",
+                      "observed":  "El total mostrado es €54.90. Diferencia de €5.00: un cargo oculto de «servicio» se aplica dos veces.",
+                      "steps":  [
+                                    "page.goto(\u0027https://app.demo.test/carrito\u0027)",
+                                    "const total = page.locator(\u0027.total\u0027)",
+                                    "await expect(total).toHaveText(\u0027€49.90\u0027)",
+                                    "Error: expect(received).toBe(expected) — «€54.90» !== «€49.90»",
+                                    "trace.zip: snapshot DOM + 3 peticiones /api/cart"
+                                ],
+                      "related":  [
+                                      "ev03",
+                                      "ev06"
+                                  ]
+                  },
+                  {
+                      "id":  "ev05",
+                      "name":  "Checkout: espera infinita en confirmación",
+                      "status":  "FAIL",
+                      "authentic":  false,
+                      "source":  "IlustraciÃ³n generada por tools/prepare_evidence.ps1",
+                      "note":  "DEMOSTRACIÃ“N EDUCATIVA: imagen ilustrativa, no corresponde a una ejecuciÃ³n real.",
+                      "explanation":  "Captura final del fallo: el estado de la aplicación queda registrado en el instante exacto del colapso, junto con el error de servidor que lo provoca.",
+                      "expected":  "Tras confirmar el pedido, la página muestra «Pedido #1042 confirmado» en menos de 5 s.",
+                      "observed":  "Spinner eterno. Timeout del test a los 30 s. El endpoint /api/orders devuelve 500.",
+                      "steps":  [
+                                    "page.goto(\u0027https://app.demo.test/checkout\u0027)",
+                                    "page.click(\u0027#btn-confirmar\u0027)",
+                                    "await expect(page.locator(\u0027.ok\u0027)).toBeVisible({ timeout: 30000 })",
+                                    "Error: locator.waitFor: Timeout 30000 ms exceeded",
+                                    "GET /api/orders/1042 → 500 Internal Server Error"
+                                ],
+                      "related":  [
+                                      "ev02",
+                                      "ev06"
+                                  ]
+                  },
+                  {
+                      "id":  "ev06",
+                      "name":  "Secuencia de investigación hasta el fallo raíz",
+                      "status":  "INFO",
+                      "authentic":  false,
+                      "source":  "IlustraciÃ³n generada por tools/prepare_evidence.ps1",
+                      "note":  "DEMOSTRACIÃ“N EDUCATIVA: imagen ilustrativa, no corresponde a una ejecuciÃ³n real.",
+                      "explanation":  "Así se investiga una evidencia: no se mira el screenshot por separado, se sigue la cadena pasos → red → DOM → código. La traza convierte un «algo falló» en una causa accionable.",
+                      "expected":  "El equipo reconstruye la historia del fallo ev04 usando la traza como mapa.",
+                      "observed":  "En 4 pasos se llega a calculateTotal() con el cargo de servicio aplicado en dos ramas del condicional.",
+                      "steps":  [
+                                    "1. Abrir la captura de ev04 y localizar el total erróneo",
+                                    "2. Revisar pasos del test: la aserción es correcta",
+                                    "3. Inspeccionar /api/cart en la traza: cargo \"servicio\" ×2",
+                                    "4. Buscar calculateTotal() → rama else sin deduplicar"
+                                ],
+                      "related":  [
+                                      "ev04",
+                                      "ev05"
+                                  ]
+                  }
+              ]
+}

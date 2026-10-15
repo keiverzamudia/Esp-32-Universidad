@@ -1,0 +1,1 @@
+RESULT: PASS  clients=4 dur=600s ok=2175 fail=0 p50=57,4ms p95=163,8ms max=5769,4ms rps=3,62

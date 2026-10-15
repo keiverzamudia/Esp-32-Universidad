@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "scenarios": [
+    {
+      "id": "ev01",
+      "name": "Login aceptado con credenciales válidas",
+      "status": "PASS",
+      "explanation": "El test automatizado valida que un usuario con credenciales correctas accede al panel. Playwright registra la navegación, el envío del formulario y la aserción de bienvenida: evidencia de que la ruta feliz funciona.",
+      "expected": "Tras enviar email y password válidos, el usuario ve «Bienvenida, ana@demo.test» y la URL cambia a /panel.",
+      "observed": "Bienvenida visible en 412 ms. URL /panel. Aserción superada.",
+      "steps": [
+        "page.goto('https://app.demo.test/login')",
+        "page.fill('#email', 'ana@demo.test')",
+        "page.fill('#password', '••••••••')",
+        "page.click('#btn-entrar')",
+        "await expect(page.locator('.welcome')).toHaveText('Bienvenida, ana@demo.test')",
+        "await expect(page).toHaveURL(/\\/panel/)"
+      ],
+      "related": ["ev02"]
+    },
+    {
+      "id": "ev02",
+      "name": "Timeout esperando #btn-pagar (elemento inexistente)",
+      "status": "FAIL",
+      "explanation": "El selector apunta a un botón que la aplicación ya no renderiza en esa vista. Playwright congela el contexto, guarda screenshot y traza: el fallo real es un cambio de UI no reflejado en el test.",
+      "expected": "El botón #btn-pagar aparece en el carrito y al hacer clic inicia el checkout.",
+      "observed": "Timeout 30000 ms excedido esperando locator('#btn-pagar') visible. El DOM muestra #btn-finalizar en su lugar.",
+      "steps": [
+        "page.goto('https://app.demo.test/carrito')",
+        "await expect(page.locator('.item')).toHaveCount(2)",
+        "page.click('#btn-pagar')",
+        "Error: locator.click: Timeout 30000 ms exceeded",
+        "Captura + trace.zip guardados en test-results/"
+      ],
+      "related": ["ev01", "ev05"]
+    },
+    {
+      "id": "ev03",
+      "name": "Formulario de contacto no valida email",
+      "status": "FAIL",
+      "expected": "Un email inválido («ana@@demo») muestra el mensaje «Introduce un email válido» y no envía.",
+      "observed": "El formulario acepta «ana@@demo», envía con 200 y no muestra ningún error. La validación del cliente desapareció en la v2.3.",
+      "explanation": "Discrepancia entre la regla de negocio documentada y el comportamiento real. La evidencia (screenshot + logs de red) demuestra que el submit ocurre sin validación.",
+      "steps": [
+        "page.goto('https://app.demo.test/contacto')",
+        "page.fill('#email', 'ana@@demo')",
+        "page.click('#btn-enviar')",
+        "await expect(page.locator('.error')).toBeVisible()",
+        "Error: expect(locator).toBeVisible() — elemento .error no encontrado",
+        "POST /api/contact respondió 200 (no debería enviarse)"
+      ],
+      "related": ["ev04"]
+    },
+    {
+      "id": "ev04",
+      "name": "Carrito: total esperado €49.90, observado €54.90",
+      "status": "FAIL",
+      "expected": "Con 2 artículos (€24.95 c/u) el total muestra €49.90 antes de impuestos.",
+      "observed": "El total mostrado es €54.90. Diferencia de €5.00: un cargo oculto de «servicio» se aplica dos veces.",
+      "explanation": "Fallo de aserción numérico. La traza de red incluida en la evidencia permite ver la respuesta del carrito y rastrear el bug hasta calculateTotal().",
+      "steps": [
+        "page.goto('https://app.demo.test/carrito')",
+        "const total = page.locator('.total')",
+        "await expect(total).toHaveText('€49.90')",
+        "Error: expect(received).toBe(expected) — «€54.90» !== «€49.90»",
+        "trace.zip: snapshot DOM + 3 peticiones /api/cart"
+      ],
+      "related": ["ev03", "ev06"]
+    },
+    {
+      "id": "ev05",
+      "name": "Checkout: espera infinita en confirmación",
+      "status": "FAIL",
+      "expected": "Tras confirmar el pedido, la página muestra «Pedido #1042 confirmado» en menos de 5 s.",
+      "observed": "Spinner eterno. Timeout del test a los 30 s. El endpoint /api/orders devuelve 500.",
+      "explanation": "Captura final del fallo: el estado de la aplicación queda registrado en el instante exacto del colapso, junto con el error de servidor que lo provoca.",
+      "steps": [
+        "page.goto('https://app.demo.test/checkout')",
+        "page.click('#btn-confirmar')",
+        "await expect(page.locator('.ok')).toBeVisible({ timeout: 30000 })",
+        "Error: locator.waitFor: Timeout 30000 ms exceeded",
+        "GET /api/orders/1042 → 500 Internal Server Error"
+      ],
+      "related": ["ev02", "ev06"]
+    },
+    {
+      "id": "ev06",
+      "name": "Secuencia de investigación hasta el fallo raíz",
+      "status": "INFO",
+      "expected": "El equipo reconstruye la historia del fallo ev04 usando la traza como mapa.",
+      "observed": "En 4 pasos se llega a calculateTotal() con el cargo de servicio aplicado en dos ramas del condicional.",
+      "explanation": "Así se investiga una evidencia: no se mira el screenshot por separado, se sigue la cadena pasos → red → DOM → código. La traza convierte un «algo falló» en una causa accionable.",
+      "steps": [
+        "1. Abrir la captura de ev04 y localizar el total erróneo",
+        "2. Revisar pasos del test: la aserción es correcta",
+        "3. Inspeccionar /api/cart en la traza: cargo \"servicio\" ×2",
+        "4. Buscar calculateTotal() → rama else sin deduplicar"
+      ],
+      "related": ["ev04", "ev05"]
+    }
+  ]
+}

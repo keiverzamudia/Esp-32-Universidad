@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "comment": "Registro de procedencia de capturas REALES. Cuando tengas screenshots autenticos de Playwright: copia el archivo a evidence_source/ y anade una entrada aqui. Mientras tanto, prepare_evidence.ps1 genera imagenes ilustrativas marcadas como DEMOSTRACION EDUCATIVA.",
+  "imports": []
+}
